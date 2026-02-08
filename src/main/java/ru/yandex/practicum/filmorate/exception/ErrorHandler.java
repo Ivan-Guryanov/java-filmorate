@@ -30,7 +30,7 @@ public class ErrorHandler {
 
     // 2. Перехват вашей кастомной ValidationException (например, для даты релиза)
     @ExceptionHandler(ValidationException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Map<String, String> handleValidationException(ValidationException e) {
         log.error("Ошибка бизнес-валидации: {}", e.getMessage());
         return Map.of("error", e.getMessage());
