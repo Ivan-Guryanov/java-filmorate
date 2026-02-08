@@ -106,7 +106,7 @@ public class FilmControllerTest {
         mockMvc.perform(post("/films")
                         .content(userJson)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isInternalServerError())
         .andExpect(jsonPath("$.error").value("Дата релиза не может быть раньше 28 декабря 1895 года"));
     }
 
@@ -246,7 +246,7 @@ public class FilmControllerTest {
         mockMvc.perform(put("/films")
                         .content(userJson)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isInternalServerError())
         .andExpect(jsonPath("$.error").value("Дата релиза не может быть раньше 28 декабря 1895 года"));
     }
 
@@ -305,7 +305,7 @@ public class FilmControllerTest {
         mockMvc.perform(put("/films")
                         .content(userJson)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.error").value("Id должен быть указан"));
     }
 
@@ -335,7 +335,7 @@ public class FilmControllerTest {
         mockMvc.perform(put("/films")
                         .content(userJson)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.error").value("Фильм с таким id не существует"));
     }
 

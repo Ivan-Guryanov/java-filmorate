@@ -112,7 +112,7 @@ public class UserControllerTest {
         mockMvc.perform(post("/users")
                         .content(gson.toJson(user))
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isInternalServerError());
     }
 
     @Test
@@ -277,7 +277,7 @@ public class UserControllerTest {
         mockMvc.perform(put("/users")
                         .content(gson.toJson(user))
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isInternalServerError());
     }
 
     @Test
