@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @EqualsAndHashCode(of = {"id"})
 @Data
@@ -24,4 +26,6 @@ public class User {
 
     @PastOrPresent(message = "Путешественник во времени")
     private LocalDate birthday;
+
+    private Set<Long> friends = new HashSet<>();
 }
