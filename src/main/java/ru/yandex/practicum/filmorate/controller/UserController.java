@@ -24,6 +24,11 @@ public class UserController {
         return userStorage.findAll();
     }
 
+    @GetMapping("/{id}")
+    public User getUsetById(@PathVariable Long id) {
+        return userStorage.getUsetById(id);
+    }
+
     @PostMapping
     public User create(@Valid @RequestBody User user) {
         return userStorage.create(user);

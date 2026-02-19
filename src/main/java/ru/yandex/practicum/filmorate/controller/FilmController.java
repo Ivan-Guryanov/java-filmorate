@@ -21,6 +21,12 @@ public class FilmController {
         return filmStorage.findAll();
     }
 
+    @GetMapping("/{id}")
+    public Film getFilmById(@PathVariable Long id) {
+
+        return filmStorage.getFilmById(id);
+    }
+
     @PostMapping
     public Film create(@Valid @RequestBody Film film) {
         return filmStorage.create(film);
@@ -45,6 +51,4 @@ public class FilmController {
     public Collection<Film> getPopular(@RequestParam(defaultValue = "10") Integer count) {
         return filmService.getPopular(count);
     }
-
-
 }

@@ -23,10 +23,6 @@ public class FilmService {
 
         Film film = filmStorage.getFilmById(id);
 
-        if (film == null) {
-            throw new NotFoundException("Фильм с id " + id + " не найден");
-        }
-
         if (userStorage.getUsetById(userId) == null) {
             throw new NotFoundException("Пользователь с id " + userId + " не найден");
         }
@@ -40,10 +36,6 @@ public class FilmService {
     public Film deleteLike(Long id, Long userId) {
         log.info("Получен запрос от пользователя {} на удаление лайка у фильма {}", userId, id);
         Film film = filmStorage.getFilmById(id);
-
-        if (film == null) {
-            throw new NotFoundException("Фильм с id " + id + " не найден");
-        }
 
         if (userStorage.getUsetById(userId) == null) {
             throw new NotFoundException("Пользователь с id " + userId + " не найден");
