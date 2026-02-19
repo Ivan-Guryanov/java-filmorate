@@ -36,9 +36,16 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler(ValidationException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleValidationException(ValidationException e) {
-        log.error("Ошибка бизнес-валидации: {}", e.getMessage());
+        log.error("Ошибка валидации данных: {}", e.getMessage());
+        return Map.of("error", e.getMessage());
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, String> handleNotFoundException(NotFoundException e) {
+        log.error("Отсутствуют заправшиваемые данные: {}", e.getMessage());
         return Map.of("error", e.getMessage());
     }
 }
