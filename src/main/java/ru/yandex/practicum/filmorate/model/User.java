@@ -28,4 +28,8 @@ public class User {
     private LocalDate birthday;
 
     private Set<Long> friends = new HashSet<>();
+
+    private Set<Long> initiatedFriendships = new HashSet<>();
+
+    private Set<Long> incomingRequests = new HashSet<>();
 }
