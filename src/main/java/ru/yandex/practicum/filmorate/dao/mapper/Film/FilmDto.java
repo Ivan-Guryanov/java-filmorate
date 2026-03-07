@@ -21,6 +21,6 @@ public class FilmDto {
     private int duration;
     @Builder.Default
     private Set<Long> likes = new HashSet<>();
-    private int genre;
+    private Set<Integer>genre = new HashSet<>();
     private int rating;
 }

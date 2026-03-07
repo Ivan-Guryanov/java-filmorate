@@ -29,7 +29,7 @@ public class Film {
 
     private Set<Long> likes = new HashSet<>();
 
-    private int genre;
+    private Set<Integer> genre= new HashSet<>();
 
     private int rating;
 

@@ -21,8 +21,8 @@ public class FilmMapper<U> implements RowMapper<Film> {
                         rs.getDate("birthday").toLocalDate() : null)
                 .duration(rs.getInt("duration"))
                 .likes(new HashSet<>())
-                .genre(rs.getInt("genre"))
-                .genre(rs.getInt("genre"))
+                .genre(new HashSet<>())
+                .rating(rs.getInt("rating"))
                 .build();
     }
 

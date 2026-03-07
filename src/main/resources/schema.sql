@@ -31,8 +31,7 @@ CREATE TABLE IF NOT EXISTS film (
     name VARCHAR(50) NOT NULL, 									-- Название фильма
     description VARCHAR(200), 									-- Краткое описание фильма
     releaseDate DATE, 											-- Дата выхода фильма в прокат (тип данных: год-месяц-день)
-    duration INTEGER, 											-- Продолжительность фильма в минутах
-    genre_id INTEGER REFERENCES genre(id), 						-- Ссылка на ID жанра из таблицы genre (внешний ключ)
+    duration INTEGER, 											-- Продолжительность фильма в минутах                     , 						-- Ссылка на ID жанра из таблицы genre (внешний ключ)
     rating_id INTEGER REFERENCES rating(id) 					-- Ссылка на ID рейтинга из таблицы rating (внешний ключ)
 );
 
@@ -42,3 +41,26 @@ CREATE TABLE IF NOT EXISTS likes (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP(), 			-- Дата и время постановки лайка, по умолчанию — текущий момент
     PRIMARY KEY (film_id, user_id) 								-- Составной первичный ключ: один пользователь может лайкнуть один фильм только один раз
 );
+
+CREATE TABLE IF NOT EXISTS film_genres (
+    film_id BIGINT REFERENCES film(id) ON DELETE CASCADE,
+    genre_id INTEGER REFERENCES genre(id) ON DELETE CASCADE,
+    PRIMARY KEY (film_id, genre_id)
+);
+
+MERGE INTO genre (genre) KEY(genre)
+VALUES
+    ('Comedy'),
+    ('Drama'),
+    ('Animation'),
+    ('Thriller'),
+    ('Documentary'),
+    ('Action');
+
+MERGE INTO rating (rating) KEY(rating)
+VALUES
+    ('G'),
+    ('PG'),
+    ('PG_13'),
+    ('R'),
+    ('NC_17')

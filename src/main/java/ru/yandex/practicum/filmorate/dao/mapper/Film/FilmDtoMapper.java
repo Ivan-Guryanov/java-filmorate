@@ -23,7 +23,7 @@ public class FilmDtoMapper<U> {
                 .releaseDate(film.getReleaseDate())
                 .duration(film.getDuration())
                 .likes(new HashSet<>())
-                .genre(film.getGenre())
+                .genre(new HashSet<>())
                 .rating(film.getRating())
                 .build();
     }
