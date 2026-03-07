@@ -3,15 +3,17 @@ package ru.yandex.practicum.filmorate.model;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
 @EqualsAndHashCode(of = {"id"})
+@Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Film {
     private Long id;
 

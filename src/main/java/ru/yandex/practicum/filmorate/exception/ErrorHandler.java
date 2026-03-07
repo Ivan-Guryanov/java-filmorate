@@ -48,4 +48,12 @@ public class ErrorHandler {
         log.error("Отсутствуют заправшиваемые данные: {}", e.getMessage());
         return Map.of("error", e.getMessage());
     }
+
+    @ExceptionHandler(RuntimeException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, String> handleNotFoundException(RuntimeException e) {
+        log.error(e.getMessage());
+        return Map.of("error", e.getMessage());
+    }
+
 }
