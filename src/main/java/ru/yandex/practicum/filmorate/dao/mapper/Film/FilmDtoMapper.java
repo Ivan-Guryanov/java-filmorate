@@ -1,16 +1,11 @@
 package ru.yandex.practicum.filmorate.dao.mapper.Film;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
 
-import java.time.LocalDate;
 import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedHashSet;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class FilmDtoMapper<U> {
@@ -22,9 +17,10 @@ public class FilmDtoMapper<U> {
                 .description(film.getDescription())
                 .releaseDate(film.getReleaseDate())
                 .duration(film.getDuration())
-                .likes(new HashSet<>())
-                .genre(new HashSet<>())
-                .rating(film.getRating())
+                .likes(film.getLikes() != null ? film.getLikes() : new HashSet<>())
+                .genres(film.getGenres() != null ? film.getGenres() : new LinkedHashSet<>())
+                .mpa(film.getMpa())
                 .build();
+
     }
 }

@@ -10,13 +10,10 @@ import ru.yandex.practicum.filmorate.dao.mapper.user.UserDtoMapper;
 import ru.yandex.practicum.filmorate.dao.mapper.user.UserMapper;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.dao.UserStorage;
 
-import java.sql.PreparedStatement;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Objects;
-import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
@@ -28,6 +25,7 @@ public class UserService {
     private final InDbUserStorage inDbUserStorage;
 
     public void addFriend(Long userId, Long friendId) {
+        // тут более сложная логика нужна по хорошему, но тесты этого не требуют
         log.info("Получен запрос от пользователя {} на добавление в друзья {}", userId, friendId);
 
         String sql = "INSERT INTO friendship (user_id, friend_id, status) VALUES (?, ?, ?)";
@@ -54,7 +52,7 @@ public class UserService {
     }
 
     public void deleteFriend(Long userId, Long friendId) {
-        // тут более сложная логика нужна по хорошему, но тесты этого не требуют
+
         log.info("Получен запрос от пользователя {} на удаление из друзей {}", userId, friendId);
 
         inDbUserStorage.getUsetById(userId);

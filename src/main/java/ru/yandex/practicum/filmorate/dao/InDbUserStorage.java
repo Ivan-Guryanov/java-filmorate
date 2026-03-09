@@ -104,6 +104,10 @@ public class InDbUserStorage implements UserStorage {
             throw new ValidationException("Логин не должен содержать пробелы");
         }
 
+        if (newUser.getName() == null || newUser.getName().isBlank()) {
+            newUser.setName(newUser.getLogin());
+        }
+
         String sql = "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? WHERE id = ?";
 
         try {

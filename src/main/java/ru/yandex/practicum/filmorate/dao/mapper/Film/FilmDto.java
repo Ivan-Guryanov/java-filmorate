@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -21,6 +23,7 @@ public class FilmDto {
     private int duration;
     @Builder.Default
     private Set<Long> likes = new HashSet<>();
-    private Set<Integer>genre = new HashSet<>();
-    private int rating;
+    @Builder.Default
+    private Set<Genre> genres = new HashSet<>();
+    private Mpa mpa;
 }
