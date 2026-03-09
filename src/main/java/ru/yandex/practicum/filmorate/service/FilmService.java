@@ -22,7 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FilmService {
     private final JdbcTemplate jdbc;
-    private final FilmMapper<Film> mapper;
+    private final FilmMapper mapper;
     private final InDbMpa inDbMpa;
     private final InDbFilmStorage inDbFilmStorage;
 

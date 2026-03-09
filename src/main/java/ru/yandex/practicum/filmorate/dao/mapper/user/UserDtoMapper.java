@@ -7,7 +7,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.util.HashSet;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class UserDtoMapper<U> {
+public class UserDtoMapper {
 
     public static UserDto mapToDto(User user) {
         return UserDto.builder()

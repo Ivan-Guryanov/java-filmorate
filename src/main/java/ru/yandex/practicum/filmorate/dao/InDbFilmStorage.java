@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.dao;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
@@ -12,6 +13,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 
 
 import java.sql.PreparedStatement;
@@ -23,8 +25,8 @@ import java.util.*;
 @RequiredArgsConstructor
 public class InDbFilmStorage implements FilmStorage {
     private final JdbcTemplate jdbc;
-    private final FilmMapper<Film> mapper;
-    private final InDbMpa inDbMpa;
+    private final FilmMapper mapper;
+
 
 
     @Override
@@ -81,14 +83,8 @@ public class InDbFilmStorage implements FilmStorage {
                 film.setGenres(new LinkedHashSet<>());
             }
 
-            film.setMpa(inDbMpa.inMpaById(film.getMpa().getId()));
+            return getFilmById(id);
 
-            return FilmDtoMapper.mapToDto(film);
-
-//        } catch (org.springframework.dao.DataAccessException e) {
-//            log.error("Ошибка при работе с БД: {}", e.getMessage());
-//            throw new RuntimeException("Ошибка сохранения пользователя");
-//        }
         } catch (
                 org.springframework.dao.DataAccessException e) {
             log.error("КРИТИЧЕСКАЯ ОШИБКА: ", e);
@@ -109,7 +105,6 @@ public class InDbFilmStorage implements FilmStorage {
             throw new ValidationException("Дата релиза не может быть раньше 28 декабря 1895 года");
         }
 
-        // Проверка существования
         String checkSql = "SELECT id FROM film WHERE id = ?";
         if (!jdbc.queryForRowSet(checkSql, newFilm.getId()).next()) {
             throw new NotFoundException("Фильм с id " + newFilm.getId() + " не найден");
@@ -119,7 +114,6 @@ public class InDbFilmStorage implements FilmStorage {
             String sqlUpdate = "UPDATE film SET name = ?, description = ?, releaseDate = ?, " +
                     "duration = ?, rating_id = ? WHERE id = ?";
 
-            // Используем простой update, так как ID нам уже известен
             jdbc.update(sqlUpdate,
                     newFilm.getName(),
                     newFilm.getDescription(),
@@ -131,7 +125,6 @@ public class InDbFilmStorage implements FilmStorage {
 
             Long id = newFilm.getId();
 
-            // ОБЯЗАТЕЛЬНО удаляем старые жанры перед любой проверкой
             jdbc.update("DELETE FROM film_genres WHERE film_id = ?", id);
 
             if (newFilm.getGenres() != null && !newFilm.getGenres().isEmpty()) {
@@ -147,14 +140,13 @@ public class InDbFilmStorage implements FilmStorage {
 
                 jdbc.batchUpdate(sqlGenres, batchArgs);
 
-                // Подгружаем полные данные жанров (с именами) из БД
                 String sqlGetFullGenres = "SELECT g.id, g.genre FROM genre g " +
                         "JOIN film_genres fg ON g.id = fg.genre_id " +
                         "WHERE fg.film_id = ? ORDER BY g.id";
 
                 List<Genre> fullGenres = jdbc.query(sqlGetFullGenres, (rs, rowNum) -> Genre.builder()
                         .id(rs.getInt("id"))
-                        .name(rs.getString("genre")) // Здесь должно быть имя колонки из вашей БД
+                        .name(rs.getString("genre"))
                         .build(), id);
 
                 newFilm.setGenres(new LinkedHashSet<>(fullGenres));
@@ -162,11 +154,8 @@ public class InDbFilmStorage implements FilmStorage {
                 newFilm.setGenres(new LinkedHashSet<>());
             }
 
-            // Подгружаем полное MPA с именем
-            newFilm.setMpa(inDbMpa.inMpaById(newFilm.getMpa().getId()));
-
             log.info("Фильм с id {} успешно обновлен", id);
-            return FilmDtoMapper.mapToDto(newFilm);
+            return getFilmById(id);
 
         } catch (org.springframework.dao.DataAccessException e) {
             log.error("Ошибка при работе с БД при обновлении id {}: {}", newFilm.getId(), e.getMessage());
@@ -176,37 +165,62 @@ public class InDbFilmStorage implements FilmStorage {
 
     @Override
     public Collection<FilmDto> findAll() {
-        String query = "SELECT * FROM film";
+        String sql = "SELECT f.*, " +
+                "g.id AS genre_id, g.genre AS genre_name, " +
+                "r.id AS r_id, r.rating AS r_name " +
+                "FROM film f " +
+                "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
+                "LEFT JOIN genre g ON fg.genre_id = g.id " +
+                "LEFT JOIN rating r ON f.rating_id = r.id " +
+                "ORDER BY f.id";
 
         try {
-            List<Film> films = jdbc.query(query, mapper);
+            List<Film> films = jdbc.query(sql, rs -> {
+                Map<Long, Film> map = new LinkedHashMap<>();
 
-            for (Film film : films) {
-                String sqlGenres = "SELECT g.id, g.genre FROM genre g " +
-                        "JOIN film_genres fg ON g.id = fg.genre_id " +
-                        "WHERE fg.film_id = ?";
+                while (rs.next()) {
+                    Long filmId = rs.getLong("id");
+                    Film film = map.get(filmId);
 
-                List<Genre> genres = jdbc.query(sqlGenres, (rs, rowNum) -> Genre.builder()
-                        .id(rs.getInt("id"))
-                        .name(rs.getString("genre"))
-                        .build(), film.getId());
+                    if (film == null) {
+                        film = Film.builder()
+                                .id(filmId)
+                                .name(rs.getString("name"))
+                                .description(rs.getString("description"))
+                                .releaseDate(rs.getDate("releaseDate").toLocalDate())
+                                .duration(rs.getInt("duration"))
+                                .genres(new LinkedHashSet<>())
+                                .mpa(Mpa.builder()
+                                        .id(rs.getInt("id"))
+                                        .name(rs.getString("rating"))
+                                        .build())
+                                .build();
+                        map.put(filmId, film);
+                    }
 
-                film.setGenres(new LinkedHashSet<>(genres));
-
-                film.setMpa(inDbMpa.inMpaById(film.getMpa().getId()));
-
-            }
+                    int genreId = rs.getInt("genre_id");
+                    if (genreId != 0) {
+                        Genre genre = Genre.builder()
+                                .id(genreId)
+                                .name(rs.getString("genre_name"))
+                                .build();
+                        film.getGenres().add(genre);
+                    }
+                }
+                return new ArrayList<>(map.values());
+            });
 
             return films.stream()
                     .map(FilmDtoMapper::mapToDto)
                     .toList();
 
-        } catch (org.springframework.dao.DataAccessException e) {
-            log.error("Ошибка при получении списка фильмов: {}", e.getMessage());
-            throw new RuntimeException("Ошибка работы с базой данных при получении списка фильмов");
+        } catch (
+                org.springframework.dao.DataAccessException e) {
+            log.error("КРИТИЧЕСКАЯ ОШИБКА: ", e);
+            throw new RuntimeException("Детали ошибки: " + e.getMostSpecificCause().getMessage());
         }
-
     }
+
 
 
     @Override
@@ -215,51 +229,61 @@ public class InDbFilmStorage implements FilmStorage {
             throw new ValidationException("Не указан айди фильма");
         }
 
-        String sql = "SELECT * FROM film WHERE id = ?";
+        String sql =  "SELECT f.*, " +
+                "g.id AS genre_id, g.genre AS genre_name, " +
+                "r.id AS r_id, r.rating AS r_name " +
+                "FROM film f " +
+                "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
+                "LEFT JOIN genre g ON fg.genre_id = g.id " +
+                "LEFT JOIN rating r ON f.rating_id = r.id " +
+                "WHERE f.id = ?";
 
         try {
-            Film film = jdbc.queryForObject(sql, mapper, id);
+            Film resultFilm = jdbc.query(sql, rs -> {
+                Film film = null;
+                while (rs.next()) {
+                    if (film == null) {
+                        film = Film.builder()
+                                .id(rs.getLong("id"))
+                                .name(rs.getString("name"))
+                                .description(rs.getString("description"))
+                                .releaseDate(rs.getDate("releaseDate").toLocalDate())
+                                .duration(rs.getInt("duration"))
+                                .genres(new LinkedHashSet<>())
+                                .mpa(Mpa.builder()
+                                        .id(rs.getInt("r_id")) // Берем алиас рейтинга
+                                        .name(rs.getString("r_name"))
+                                        .build())
+                                .build();
+                    }
 
-            if (film == null) {
+                    int genreId = rs.getInt("genre_id");
+                    if (genreId != 0) {
+                        Genre genre = Genre.builder()
+                                .id(genreId)
+                                .name(rs.getString("genre_name"))
+                                .build();
+                        film.getGenres().add(genre);
+                    }
+                }
+                return film;
+            }, id);
+
+            if (resultFilm == null) {
+                log.error("Фильм с id {} не найден в БД", id);
                 throw new NotFoundException("Фильм с id " + id + " не найден");
             }
 
-            if (film.getMpa() != null && film.getMpa().getId() != 0) {
-                film.setMpa(inDbMpa.inMpaById(film.getMpa().getId()));
-            }
-
-            String sqlGetGenres = "SELECT g.id, g.genre FROM genre g " +
-                    "JOIN film_genres fg ON g.id = fg.genre_id " +
-                    "WHERE fg.film_id = ? ORDER BY g.id";
-
-            List<Genre> genres = jdbc.query(sqlGetGenres, (rs, rowNum) -> Genre.builder()
-                    .id(rs.getInt("id"))
-                    .name(rs.getString("genre"))
-                    .build(), id);
-
-            film.setGenres(new LinkedHashSet<>(genres));
-
-
             String likesSql = "SELECT user_id FROM likes WHERE film_id = ?";
             List<Long> userIds = jdbc.query(likesSql, (rs, rowNum) -> rs.getLong("user_id"), id);
-            film.setLikes(new HashSet<>(userIds));
+            resultFilm.setLikes(new HashSet<>(userIds));
 
+            return FilmDtoMapper.mapToDto(resultFilm);
 
-            return FilmDtoMapper.mapToDto(film);
-
-        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
-            log.error("Фильм с id {} не найден в БД", id);
-            throw new NotFoundException("Фильм с id " + id + " не найден");
-        } catch (org.springframework.dao.DataAccessException e) {
+        } catch (DataAccessException e) {
             log.error("Ошибка при получении фильма id {}: {}", id, e.getMessage());
             throw new RuntimeException("Ошибка работы с базой данных", e);
         }
     }
 
 }
-
-//} catch (
-//org.springframework.dao.DataAccessException e) {
-//        log.error("КРИТИЧЕСКАЯ ОШИБКА: ", e);
-//            throw new RuntimeException("Детали ошибки: " + e.getMostSpecificCause().getMessage());
-//        }

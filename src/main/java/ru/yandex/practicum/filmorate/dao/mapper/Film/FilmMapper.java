@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import java.util.HashSet;
 
 @Component
-public class FilmMapper<U> implements RowMapper<Film> {
+public class FilmMapper implements RowMapper<Film> {
 
     @Override
     public Film mapRow(ResultSet rs, int rowNum) throws SQLException {
