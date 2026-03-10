@@ -6,9 +6,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.InDbFilmStorage;
 import ru.yandex.practicum.filmorate.dao.mapper.Film.FilmDto;
+import ru.yandex.practicum.filmorate.dao.mapper.Film.FilmDtoMapper;
+import ru.yandex.practicum.filmorate.dao.mapper.Film.FilmMapper;
+import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -17,6 +21,7 @@ import java.util.stream.Collectors;
 public class FilmService {
     private final JdbcTemplate jdbc;
     private final InDbFilmStorage inDbFilmStorage;
+    private final FilmMapper mapper;
 
 
     public FilmDto addLike(Long id, Long userId) {
@@ -55,10 +60,17 @@ public class FilmService {
             count = 10;
         }
         log.info("Запрошены {} популярных фильмов", count);
-        return inDbFilmStorage.findAll().stream()
-                .sorted((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()))
-                .limit(count)
-                .collect(Collectors.toList());
+        String sql = "SELECT f.*, r.rating AS mpa_name, COUNT(l.user_id) AS rate " +
+                "FROM film f " +
+                "LEFT JOIN rating r ON f.rating_id = r.id " +
+                "LEFT JOIN likes l ON f.id = l.film_id " +
+                "GROUP BY f.id " +
+                "ORDER BY rate DESC " +
+                "LIMIT ?";
 
+        List<Film> films = jdbc.query(sql, mapper, count);
+        return films.stream()
+                .map(FilmDtoMapper::mapToDto)
+                .collect(Collectors.toList());
     }
 }

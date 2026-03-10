@@ -209,7 +209,6 @@ public class InDbFilmStorage implements FilmStorage {
                 }
                 return new ArrayList<>(map.values());
             });
-
             return films.stream()
                     .map(FilmDtoMapper::mapToDto)
                     .toList();
