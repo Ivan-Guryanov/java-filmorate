@@ -5,25 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.InDbFilmStorage;
-import ru.yandex.practicum.filmorate.dao.InDbMpa;
 import ru.yandex.practicum.filmorate.dao.mapper.Film.FilmDto;
-import ru.yandex.practicum.filmorate.dao.mapper.Film.FilmDtoMapper;
-import ru.yandex.practicum.filmorate.dao.mapper.Film.FilmMapper;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FilmService {
     private final JdbcTemplate jdbc;
-    private final FilmMapper mapper;
-    private final InDbMpa inDbMpa;
     private final InDbFilmStorage inDbFilmStorage;
 
 
@@ -59,46 +51,14 @@ public class FilmService {
     }
 
     public Collection<FilmDto> getPopular(Integer count) {
-        log.info("Запрошены {} популярных фильмов", count);
-        String sql = "SELECT f.* " +
-                "FROM film AS f " +
-                "LEFT JOIN likes AS l ON f.id = l.film_id " +
-                "GROUP BY f.id " +
-                "ORDER BY COUNT(l.user_id) DESC " +
-                "LIMIT ?";
-
-        try {
-            List<Film> films = jdbc.query(sql, mapper, count);
-
-            for (Film film : films) {
-                String sqlGenres = "SELECT g.id, g.genre FROM genre g " +
-                        "JOIN film_genres fg ON g.id = fg.genre_id " +
-                        "WHERE fg.film_id = ?";
-
-                List<Genre> genres = jdbc.query(sqlGenres, (rs, rowNum) -> Genre.builder()
-                        .id(rs.getInt("id"))
-                        .name(rs.getString("genre"))
-                        .build(), film.getId());
-
-                film.setGenres(new LinkedHashSet<>(genres));
-
-                film.setMpa(inDbMpa.inMpaById(film.getMpa().getId()));
-            }
-
-            return films.stream()
-                    .map(FilmDtoMapper::mapToDto)
-                    .toList();
-
-
-        } catch (org.springframework.dao.DataAccessException e) {
-            log.error("Ошибка при получении списка фильмов: {}", e.getMessage());
-            throw new RuntimeException("Ошибка работы с базой данных при получении списка фильмов");
+        if (count == null) {
+            count = 10;
         }
-//        } catch (
-//                org.springframework.dao.DataAccessException e) {
-//            log.error("КРИТИЧЕСКАЯ ОШИБКА: ", e);
-//            throw new RuntimeException("Детали ошибки: " + e.getMostSpecificCause().getMessage());
-//        }
+        log.info("Запрошены {} популярных фильмов", count);
+        return inDbFilmStorage.findAll().stream()
+                .sorted((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()))
+                .limit(count)
+                .collect(Collectors.toList());
 
     }
 }
