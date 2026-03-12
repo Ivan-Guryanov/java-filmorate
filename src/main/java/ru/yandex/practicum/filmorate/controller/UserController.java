@@ -4,9 +4,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dao.InDbUserStorage;
+import ru.yandex.practicum.filmorate.dao.mapper.user.UserDto;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
 
@@ -16,27 +17,27 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserStorage userStorage;
+    private final InDbUserStorage inDbUserStorage;
     private final UserService userService;
 
     @GetMapping
-    public Collection<User> findAll() {
-        return userStorage.findAll();
+    public Collection<UserDto> findAll() {
+        return inDbUserStorage.findAll();
     }
 
     @GetMapping("/{id}")
-    public User getUsetById(@PathVariable Long id) {
-        return userStorage.getUsetById(id);
+    public UserDto getUsetById(@PathVariable Long id) {
+        return inDbUserStorage.getUsetById(id);
     }
 
     @PostMapping
-    public User create(@Valid @RequestBody User user) {
-        return userStorage.create(user);
+    public UserDto create(@Valid @RequestBody User user) {
+        return inDbUserStorage.create(user);
     }
 
     @PutMapping
-    public User update(@Valid @RequestBody User newUser) {
-        return userStorage.update(newUser);
+    public UserDto update(@Valid @RequestBody User newUser) {
+        return inDbUserStorage.update(newUser);
     }
 
     @PutMapping ("/{id}/friends/{friendId}")
@@ -50,7 +51,7 @@ public class UserController {
     }
 
     @GetMapping ("/{id}/friends")
-    public Collection<User> findAllFriends(@PathVariable Long id) {
+    public Collection<UserDto> findAllFriends(@PathVariable Long id) {
         return userService.findAllFriends(id);
     }
 

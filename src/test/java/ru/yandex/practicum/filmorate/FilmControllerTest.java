@@ -2,25 +2,33 @@ package ru.yandex.practicum.filmorate;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+
 @SpringBootTest
 @AutoConfigureMockMvc
+@AutoConfigureTestDatabase
+@Transactional
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 public class FilmControllerTest {
 
@@ -44,6 +52,15 @@ public class FilmControllerTest {
         film.setDescription("Description");
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(120);
+
+        Mpa mpa = new Mpa();
+        mpa.setId(1);
+        film.setMpa(mpa);
+
+        Genre genre = new Genre();
+        genre.setId(1);
+        genre.setName("Комедия");
+        film.setGenres(Set.of(genre));
 
         String userJson = gson.toJson(film);
 
@@ -137,6 +154,15 @@ public class FilmControllerTest {
         oldfilm.setReleaseDate(LocalDate.of(2000, 1, 2));
         oldfilm.setDuration(121);
 
+        Mpa mpa = new Mpa();
+        mpa.setId(1);
+        oldfilm.setMpa(mpa);
+
+        Genre genre = new Genre();
+        genre.setId(1);
+        genre.setName("Комедия");
+        oldfilm.setGenres(Set.of(genre));
+
         mockMvc.perform(post("/films")
                 .content(gson.toJson(oldfilm))
                 .contentType(MediaType.APPLICATION_JSON));
@@ -148,6 +174,13 @@ public class FilmControllerTest {
         film.setDescription("Description");
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(120);
+
+        mpa.setId(1);
+        film.setMpa(mpa);
+
+        genre.setId(1);
+        genre.setName("Комедия");
+        film.setGenres(Set.of(genre));
 
         String userJson = gson.toJson(film);
 
@@ -324,7 +357,7 @@ public class FilmControllerTest {
 
 
         Film film = new Film();
-        film.setId(2L);
+        film.setId(9999L);
         film.setName("Name");
         film.setDescription("Description");
         film.setReleaseDate(LocalDate.of(2000, 01, 01));
@@ -336,18 +369,27 @@ public class FilmControllerTest {
                         .content(userJson)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error").value("Фильм с таким id не существует"));
+                .andExpect(jsonPath("$.error").value("Фильм с id 9999 не найден"));
     }
 
     @Test
     @DisplayName("Получение списка всех фильмов")
     void shouldReturnAllFilms() throws Exception {
-        // 1. Создаем два разных фильма
+
         Film film1 = new Film();
         film1.setName("Name1");
         film1.setDescription("Description1");
         film1.setReleaseDate(LocalDate.of(2000, 1, 1));
         film1.setDuration(120);
+
+        Mpa mpa = new Mpa();
+        mpa.setId(1);
+        film1.setMpa(mpa);
+
+        Genre genre = new Genre();
+        genre.setId(1);
+        genre.setName("Комедия");
+        film1.setGenres(Set.of(genre));
 
         Film film2 = new Film();
         film2.setName("Name2");
@@ -355,7 +397,13 @@ public class FilmControllerTest {
         film2.setReleaseDate(LocalDate.of(2000, 1, 2));
         film2.setDuration(121);
 
-        // 2. Сохраняем их через POST
+        mpa.setId(1);
+        film2.setMpa(mpa);
+
+        genre.setId(1);
+        genre.setName("Комедия");
+        film2.setGenres(Set.of(genre));
+
         mockMvc.perform(post("/films")
                 .content(gson.toJson(film1))
                 .contentType(MediaType.APPLICATION_JSON));
@@ -364,12 +412,9 @@ public class FilmControllerTest {
                 .content(gson.toJson(film2))
                 .contentType(MediaType.APPLICATION_JSON));
 
-        // 3. Выполняем GET запрос
         mockMvc.perform(get("/films"))
                 .andExpect(status().isOk())
-                // Проверяем, что в массиве 2 элемента
                 .andExpect(jsonPath("$.length()").value(2))
-                // Проверяем, что названия присутствуют в ответе
                 .andExpect(jsonPath("$[0].name").exists())
                 .andExpect(jsonPath("$[1].name").exists());
     }
